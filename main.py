@@ -1,9 +1,8 @@
-import os
 import json
-from openai import OpenAI
-from dotenv import load_dotenv
-import textstat
 import language_tool_python
+import textstat
+from dotenv import load_dotenv
+from deertick.src.py.agent import Agent
 
 # Load environment variables from .env file
 load_dotenv()
@@ -17,23 +16,17 @@ class AIPaperGrader:
 
     def __init__(
             self,
-            model="gpt-4-turbo"
+            model="OpenAI: GPT-4 Turbo",
     ):
         """
         Initializes the grader with an OpenAI client and a grammar tool.
         """
-        api_key = os.getenv(
-            "OPENAI_API_KEY"
+        agent = Agent(
+            model,
+            "You are an expert AI teaching assistant. Your task is to grade a student's paper based on a given assignment prompt and a detailed grading rubric. You must provide a score and constructive feedback for EACH criterion in the rubric. Your analysis must be objective and strictly adhere to the rubric's definitions.",
+            "openai"
         )
-        if not api_key:
-            raise ValueError(
-                "OPENAI_API_KEY not found in .env file."
-            )
 
-        self.client = OpenAI(
-            api_key=api_key
-        )
-        self.model = model
         # Initialize the grammar tool (it may download language data on first run)
         try:
             self.lang_tool = language_tool_python.LanguageTool(
@@ -90,13 +83,6 @@ class AIPaperGrader:
             indent=2
         )
 
-        system_prompt = """
-        You are an expert AI teaching assistant. Your task is to grade a student's paper
-        based on a given assignment prompt and a detailed grading rubric. You must provide
-        a score and constructive feedback for EACH criterion in the rubric. Your analysis
-        must be objective and strictly adhere to the rubric's definitions.
-        """
-
         user_prompt = f"""
         Please grade the following student paper.
 
@@ -126,6 +112,36 @@ class AIPaperGrader:
         """
 
         try:
+            response = self.agent.generate_response(
+                self.agent.system_prompt,
+                f"""
+                        Please grade the following student paper.
+
+                        [ASSIGNMENT PROMPT]:
+                        {assignment_prompt}
+
+                        [GRADING RUBRIC]:
+                        {rubric_str}
+
+                        [STUDENT SUBMISSION]:
+                        {student_paper}
+
+                        [YOUR TASK]:
+                        Evaluate the student's submission based STRICTLY on the provided rubric. For each criterion,
+                        provide a numerical score and detailed, constructive feedback explaining why you gave that score.
+                        Your feedback should be helpful and guide the student on how to improve.
+
+                        Return your entire response as a single, valid JSON object. The JSON object should have two main keys:
+                        1. "summary_feedback": A brief overall summary of the paper's strengths and weaknesses.
+                        2. "criteria_breakdown": A list of objects, where each object represents a criterion from the rubric and contains:
+                           - "criterion": The name of the criterion (e.g., "Clarity and Argument").
+                           - "score": The score you awarded for this criterion.
+                           - "max_score": The maximum possible score for this criterion.
+                           - "feedback": Your detailed feedback for this specific criterion.
+
+                        Do not include any text outside of the JSON object.
+                """
+            )
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[
