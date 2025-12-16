@@ -1,3 +1,6 @@
 [submodule "key"]
 	path = key
 	url = git@github.com:prototype99/paper-grade-secret.git
+[submodule "deertick"]
+	path = deertick
+	url = git@github.com:deeterbleater/deertick.git
