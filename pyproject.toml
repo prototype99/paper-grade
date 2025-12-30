@@ -1,0 +1,18 @@
+[project]
+name = "paper-grade"
+version = "0.1.0"
+description = "AI Paper Grader"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "language-tool-python>=2.7.1",
+    "textstat>=0.7.3",
+    "python-dotenv>=1.0.1",
+    "deertick",
+]
+
+[tool.uv.sources]
+deertick = { workspace = true }
+
+[tool.uv.workspace]
+members = ["deertick"]
