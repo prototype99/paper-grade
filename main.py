@@ -21,7 +21,7 @@ class AIPaperGrader:
         """
         Initializes the grader with an OpenAI client and a grammar tool.
         """
-        agent = Agent(
+        self.agent = Agent(
             model,
             "You are an expert AI teaching assistant. Your task is to grade a student's paper based on a given assignment prompt and a detailed grading rubric. You must provide a score and constructive feedback for EACH criterion in the rubric. Your analysis must be objective and strictly adhere to the rubric's definitions.",
             "openai"
